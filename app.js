@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
+var encrypt = require('mongoose-encryption');
 mongoose.connect('mongodb://localhost:27017/Authentication', {useNewUrlParser: true, 'useUnifiedTopology': true});
 
 const app = express();
@@ -24,7 +25,8 @@ const userCredendials = new mongoose.Schema({
     userName: String,
     password: String
 });
-
+const secret = 'HAY_MY_NAME_IS_KHARAL';
+userCredendials.plugin(encrypt, { secret: secret,  encryptedFields: ['password'] });
 const userData = mongoose.model('Credential', userCredendials);
 
 
