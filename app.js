@@ -3,7 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
-var encrypt = require('mongoose-encryption');
+var md5 = require('md5');
 mongoose.connect('mongodb://localhost:27017/Authentication', {useNewUrlParser: true, 'useUnifiedTopology': true});
 
 const app = express();
@@ -26,8 +26,7 @@ const userCredendials = new mongoose.Schema({
     userName: String,
     password: String
 });
-const secret = process.env.MY_SECRET;
-userCredendials.plugin(encrypt, { secret: secret,  encryptedFields: ['password'] });
+
 const userData = mongoose.model('Credential', userCredendials);
 
 
@@ -46,7 +45,7 @@ app.route('/register')
     })
     .post((req, res) => {
         const feUserName = req.body.username;
-        const fePassword = req.body.password;
+        const fePassword = md5(req.body.password);
 
         userData.find({userName: feUserName}, (err, username) => {
             if (!err) {
@@ -79,7 +78,7 @@ app.route('/login')
     })
     .post((req, res) => {
         const feUserName = req.body.username;
-        const fePassword = req.body.password;
+        const fePassword = md5(req.body.password);
         console.log(feUserName, fePassword);
 
         userData.findOne({userName: feUserName}, (err, foundUser) => {
