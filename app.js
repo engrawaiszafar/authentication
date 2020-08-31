@@ -1,9 +1,10 @@
-require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
-var md5 = require('md5');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
+
 mongoose.connect('mongodb://localhost:27017/Authentication', {useNewUrlParser: true, 'useUnifiedTopology': true});
 
 const app = express();
@@ -45,17 +46,26 @@ app.route('/register')
     })
     .post((req, res) => {
         const feUserName = req.body.username;
-        const fePassword = md5(req.body.password);
+        const fePassword = req.body.password;
+
 
         userData.find({userName: feUserName}, (err, username) => {
             if (!err) {
                 if (fePassword.toString() !== '') {
                     if (username.toString() === '') {
-                        const userdata = new userData({
-                            userName: feUserName,
-                            password: fePassword
+                        bcrypt.hash(fePassword, saltRounds, function (err, hash) {
+                            if (!err) {
+                                // Store hash in your password DB.
+                                const userdata = new userData({
+                                    userName: feUserName,
+                                    password: hash
+                                });
+                                userdata.save();
+                            } else {
+                                console.log(err);
+                                res.send(err);
+                            }
                         });
-                        userdata.save();
                         res.render('secrets');
                     } else {
                         res.send("This User Name is already registered..!!");
@@ -78,20 +88,26 @@ app.route('/login')
     })
     .post((req, res) => {
         const feUserName = req.body.username;
-        const fePassword = md5(req.body.password);
-        console.log(feUserName, fePassword);
+        const fePassword = req.body.password;
 
         userData.findOne({userName: feUserName}, (err, foundUser) => {
             if (err) {
                 console.log(err);
             } else {
                 if (foundUser) {
-                    if (foundUser.password === fePassword) {
-                        res.render('secrets');
-                    } else {
-                        console.log('Invalid password...');
-                        res.send("Password is not valid. Please try again...!!!!");
-                    }
+                    bcrypt.compare(fePassword, foundUser.password, function (err, result) {
+                        // result == true
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            if (result === true) {
+                                res.render('secrets');
+                            } else {
+                                console.log('Invalid password...');
+                                res.send("Password is not valid. Please try again...!!!!");
+                            }
+                        }
+                    });
                 } else {
                     console.log(`User is not registered with email ${feUserName}...`);
                     res.send(`User is not registered with email ${feUserName}...`);
