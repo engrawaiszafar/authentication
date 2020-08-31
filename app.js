@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
@@ -25,7 +26,7 @@ const userCredendials = new mongoose.Schema({
     userName: String,
     password: String
 });
-const secret = 'HAY_MY_NAME_IS_KHARAL';
+const secret = process.env.MY_SECRET;
 userCredendials.plugin(encrypt, { secret: secret,  encryptedFields: ['password'] });
 const userData = mongoose.model('Credential', userCredendials);
 
